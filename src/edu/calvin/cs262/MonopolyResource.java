@@ -5,13 +5,8 @@ import com.sun.jersey.api.container.httpserver.HttpServerFactory;
 import com.sun.net.httpserver.HttpServer;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.POST;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.Consumes;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
@@ -36,25 +31,24 @@ public class MonopolyResource {
     private static final String DB_LOGIN_ID = "postgres";
     private static final String DB_PASSWORD = "postgres";
 
+    /*
+     * retrievePlayers() queries the postgres database and returns an ArrayList of players
+     *      Utility method for the getPlayers path
+     *
+     * @param: none
+     * @return: players, an ArrayList
+     */
     private List retrievePlayers() throws Exception {
-        Connection connection = null;
-        Statement statement = null;
-        ResultSet rs = null;
         List players = new ArrayList<>();
-        try {
-            Class.forName("org.postgresql.Driver");
-            connection = DriverManager.getConnection(DB_URI, DB_LOGIN_ID, DB_PASSWORD);
-            statement = connection.createStatement();
-            rs = statement.executeQuery("SELECT * FROM Player");
+        Class.forName("org.postgresql.Driver");
+        try (Connection connection = DriverManager.getConnection(DB_URI, DB_LOGIN_ID, DB_PASSWORD); Statement statement = connection.createStatement();
+             ResultSet rs = statement.executeQuery("SELECT * FROM Player")) {
             while (rs.next()) {
+                //noinspection unchecked
                 players.add(new Player(rs.getInt(1), rs.getString(2), rs.getString(3)));
             }
         } catch (SQLException e) {
             throw (e);
-        } finally {
-            rs.close();
-            statement.close();
-            connection.close();
         }
         return players;
     }
@@ -83,7 +77,7 @@ public class MonopolyResource {
     public String getPlayers() {
         try {
             // As an example of GSON, we'll hard-code a couple players and return their JSON representation.
-            List<Player> hardCodedPlayers = retrievePlayers();
+            @SuppressWarnings("unchecked") List<Player> hardCodedPlayers = retrievePlayers();
             return new Gson().toJson(hardCodedPlayers);
         } catch (Exception e) {
             e.printStackTrace();
